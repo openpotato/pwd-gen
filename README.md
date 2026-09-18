@@ -18,10 +18,9 @@ No password is uploaded, stored or transmitted.
 + Guarantees at least one character from every selected character class
 + Cryptographically secure randomness with the Web Crypto API
 + Rejection sampling to avoid modulo bias
-+ Cryptographically secure Fisher-Yates shuffle
++ Fisher-Yates shuffle using cryptographically secure random values
 + Copy individual passwords
 + Copy all generated passwords
-+ Automatic light and dark mode
 + Responsive layout
 + No dependencies
 + No build step
