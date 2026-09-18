@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A small, dependency-free password generator that creates cryptographically random passwords entirely in your browser." />
+    <meta name="author" content="STÜBER SYSTEMS GmbH" />
+    <meta name="application-name" content="Password Generator" />
+    <link rel="canonical" href="https://openpotato.github.io/pwd-gen/" />
+    <link rel="license" href="https://github.com/openpotato/pwd-gen/blob/main/LICENSE" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="OpenPotato" />
+    <meta property="og:title" content="Password Generator" />
+    <meta property="og:description" content="A simple tool for generating random passwords directly in your browser." />
+    <meta property="og:url" content="https://openpotato.github.io/pwd-gen/" />
+    <meta property="og:locale" content="en_US" />
+
+    <title>Password Generator</title>
+
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #f6f7f9;
+            --surface: #fff;
+            --text: #18181b;
+            --muted: #71717a;
+            --border: #e4e4e7;
+            --primary: #18181b;
+            --primaryText: #fff;
+            --focus: #3b82f6;
+        }
+
+        @media(prefers-color-scheme:dark) {
+            :root {
+                --bg: #111113;
+                --surface: #18181b;
+                --text: #f4f4f5;
+                --muted: #a1a1aa;
+                --border: #3f3f46;
+                --primary: #f4f4f5;
+                --primaryText: #18181b;
+                --focus: #60a5fa
+            }
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
+        }
+
+        .app {
+            width: min(760px, calc(100% - 32px));
+            margin: 64px auto
+        }
+
+        header {
+            margin-bottom: 30px
+        }
+
+        h1 {
+            margin: 0 0 7px;
+            font-size: 30px;
+            font-weight: 680;
+            letter-spacing: -.035em
+        }
+
+        h2 {
+            margin: 0 0 16px;
+            font-size: 18px;
+            font-weight: 680;
+            letter-spacing: -.02em
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        .card {
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px
+        }
+
+        .card+.card {
+            margin-top: 20px
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1.6fr .7fr;
+            gap: 18px
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px
+        }
+
+        label,
+        .section-label {
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        input[type=number] {
+            width: 100%;
+            height: 40px;
+            padding: 0 11px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 14px
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--primary)
+        }
+
+        input:focus,
+        button:focus-visible {
+            outline: 2px solid var(--focus);
+            outline-offset: 2px
+        }
+
+        .length-control {
+            display: grid;
+            grid-template-columns: 1fr 84px;
+            gap: 12px;
+            align-items: center;
+            min-height: 40px
+        }
+
+        .option-section {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border)
+        }
+
+        .option-section .section-label {
+            display: block;
+            margin-bottom: 12px
+        }
+
+        .format-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 22px
+        }
+
+        .checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 400
+        }
+
+        .checkbox input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            accent-color: var(--primary)
+        }
+
+        .checkbox:has(input:disabled) {
+            opacity: .5;
+            cursor: not-allowed
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px
+        }
+
+        button {
+            height: 40px;
+            padding: 0 17px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 14px;
+            font-weight: 650;
+            cursor: pointer
+        }
+
+        button:hover {
+            filter: brightness(.97)
+        }
+
+        button.primary {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--primaryText)
+        }
+
+        .result-area {
+            margin-top: 24px
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px
+        }
+
+        .results {
+            display: grid;
+            gap: 8px
+        }
+
+        .result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 52px;
+            padding: 8px 8px 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--bg)
+        }
+
+        .password {
+            flex: 1;
+            min-width: 0;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+            user-select: all
+        }
+
+        .copy-button {
+            flex: 0 0 auto;
+            height: 34px;
+            min-height: 34px;
+            padding: 0 11px;
+            font-size: 13px
+        }
+
+        .error {
+            display: none;
+            margin-top: 16px;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .references {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.65
+        }
+
+        .references li+li {
+            margin-top: 8px
+        }
+
+        a {
+            color: var(--text);
+            text-decoration: underline;
+            text-decoration-color: var(--border);
+            text-underline-offset: 3px
+        }
+
+        a:hover {
+            text-decoration-color: var(--text)
+        }
+
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: .92em
+        }
+
+        .site-footer {
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center
+        }
+
+        .site-footer p {
+            margin: 0
+        }
+
+        .site-footer p+p {
+            margin-top: 1rem
+        }
+
+        @media(max-width:650px) {
+            .app {
+                margin: 32px auto
+            }
+
+            .card {
+                padding: 18px
+            }
+
+            .options {
+                grid-template-columns: 1fr
+            }
+
+            .actions {
+                flex-direction: column
+            }
+
+            .actions button {
+                width: 100%
+            }
+
+            .length-control {
+                grid-template-columns: 1fr 78px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header>
+            <h1>Password Generator</h1>
+            <p class="subtitle">Generate secure passwords locally in your browser.</p>
+        </header>
+
+        <section class="card">
+            <div class="options">
+                <div class="field">
+                    <label for="length">Length</label>
+                    <div class="length-control">
+                        <input id="lengthRange" type="range" min="4" max="128" value="20" aria-label="Password length">
+                        <input id="length" type="number" min="4" max="128" value="20">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="count">Count</label>
+                    <input id="count" type="number" min="1" max="100" value="1">
+                </div>
+            </div>
+
+            <div class="option-section">
+                <span class="section-label">Characters</span>
+                <div class="format-options">
+                    <label class="checkbox"><input id="lowercase" type="checkbox" checked>Lowercase</label>
+                    <label class="checkbox"><input id="uppercase" type="checkbox" checked>Uppercase</label>
+                    <label class="checkbox"><input id="numbers" type="checkbox" checked>Numbers</label>
+                    <label class="checkbox"><input id="symbols" type="checkbox" checked>Special characters</label>
+                </div>
+            </div>
+
+            <div class="option-section">
+                <span class="section-label">Options</span>
+                <div class="format-options">
+                    <label class="checkbox"><input id="lettersOnly" type="checkbox">Letters only</label>
+                    <label class="checkbox"><input id="excludeAmbiguous" type="checkbox">Exclude ambiguous</label>
+                </div>
+            </div>
+
+            <div id="error" class="error" role="alert"></div>
+
+            <div class="actions">
+                <button id="generate" class="primary" type="button">Generate</button>
+                <button id="copyAll" type="button">Copy</button>
+            </div>
+
+            <div class="result-area">
+                <div class="result-header"><span class="section-label">Result</span></div>
+                <div id="results" class="results"></div>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="referencesTitle">
+            <h2 id="referencesTitle">Standards &amp; references</h2>
+            <ul class="references">
+                <li><strong>Password authentication guidance:</strong> NIST SP 800-63B-4 provides current guidance and
+                    requirements for passwords used as authentication secrets, including password length, permitted
+                    characters, blocklists and verifier behavior — <a
+                        href="https://csrc.nist.gov/pubs/sp/800/63/b/4/final" target="_blank"
+                        rel="noopener noreferrer">NIST SP 800-63B-4</a>.</li>
+                <li><strong>Password generation and randomness:</strong> RFC 4086 / BCP 106 describes security
+                    requirements for random values and includes password generation as a specific use case — <a
+                        href="https://www.rfc-editor.org/rfc/rfc4086.html" target="_blank" rel="noopener noreferrer">RFC
+                        4086</a>.</li>
+                <li><strong>Cryptographic random values in browsers:</strong> This generator uses
+                    <code>crypto.getRandomValues()</code>; the W3C Web Cryptography API specifies it as a source of
+                    cryptographically strong random values — <a
+                        href="https://www.w3.org/TR/WebCryptoAPI/#Crypto-method-getRandomValues" target="_blank"
+                        rel="noopener noreferrer">Web Cryptography API</a>.
+                </li>
+            </ul>
+        </section>
+
+        <footer class="site-footer">
+            <p><strong>Runs locally in your browser. No data is transmitted.</strong></p>
+            <p>Made with ❤️ in Berlin. Source code on <a href="https://github.com/openpotato/pwd-gen">GitHub</a>.</p>
+        </footer>
+    </div>
+
+    <script>
+        "use strict";
+
+        // Character sets available for password generation.
+        const CHARACTERS = {
+            lowercase: "abcdefghijklmnopqrstuvwxyz",
+            uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            numbers: "0123456789",
+            symbols: "!@#$%^&*()-_=+[]{};:,.?/|~"
+        };
+
+        // Characters that can easily be confused visually.
+        const AMBIGUOUS = new Set([
+            "0", "O", "o",
+            "1", "I", "i", "l",
+            "|"
+        ]);
+
+        // Cache all required UI elements in one place.
+        const elements = {
+            results: document.getElementById("results"),
+            length: document.getElementById("length"),
+            lengthRange: document.getElementById("lengthRange"),
+            count: document.getElementById("count"),
+
+            lowercase: document.getElementById("lowercase"),
+            uppercase: document.getElementById("uppercase"),
+            numbers: document.getElementById("numbers"),
+            symbols: document.getElementById("symbols"),
+
+            lettersOnly: document.getElementById("lettersOnly"),
+            excludeAmbiguous: document.getElementById("excludeAmbiguous"),
+
+            generate: document.getElementById("generate"),
+            copyAll: document.getElementById("copyAll"),
+            error: document.getElementById("error")
+        };
+
+        /**
+         * Returns a cryptographically secure random integer in the range
+         * 0 <= value < maxExclusive.
+         *
+         * Rejection sampling is used instead of a simple modulo operation
+         * to avoid modulo bias.
+         */
+        function secureRandomInt(maxExclusive) {
+            if (!Number.isSafeInteger(maxExclusive) || maxExclusive <= 0) {
+                throw new RangeError("maxExclusive must be a positive integer.");
+            }
+
+            const uint32Range = 0x100000000;
+
+            if (maxExclusive > uint32Range) {
+                throw new RangeError("maxExclusive is too large.");
+            }
+
+            // Values at or above this limit are rejected so the remaining
+            // range can be divided evenly by maxExclusive.
+            const limit = uint32Range - (uint32Range % maxExclusive);
+
+            const buffer = new Uint32Array(1);
+            let value;
+
+            do {
+                crypto.getRandomValues(buffer);
+                value = buffer[0];
+            } while (value >= limit);
+
+            return value % maxExclusive;
+        }
+
+        /**
+         * Selects one cryptographically random character from a character set.
+         */
+        function randomCharacter(characterSet) {
+            return characterSet[secureRandomInt(characterSet.length)];
+        }
+
+        /**
+         * Removes characters that may be visually confused with each other.
+         */
+        function removeAmbiguousCharacters(value) {
+            return [...value]
+                .filter(character => !AMBIGUOUS.has(character))
+                .join("");
+        }
+
+        /**
+         * Shuffles an array in place using a Fisher-Yates shuffle and
+         * cryptographically secure random indexes.
+         */
+        function shuffleSecurely(values) {
+            for (let i = values.length - 1; i > 0; i--) {
+                const j = secureRandomInt(i + 1);
+
+                [values[i], values[j]] = [values[j], values[i]];
+            }
+
+            return values;
+        }
+
+        /**
+         * Builds the list of character sets currently enabled by the user.
+         *
+         * "Letters only" excludes numbers and symbols without changing their
+         * checkbox state, so the previous selection is preserved when the
+         * option is disabled again.
+         */
+        function getCharacterSets() {
+            const sets = [];
+
+            if (elements.lowercase.checked) {
+                sets.push(CHARACTERS.lowercase);
+            }
+
+            if (elements.uppercase.checked) {
+                sets.push(CHARACTERS.uppercase);
+            }
+
+            if (
+                !elements.lettersOnly.checked &&
+                elements.numbers.checked
+            ) {
+                sets.push(CHARACTERS.numbers);
+            }
+
+            if (
+                !elements.lettersOnly.checked &&
+                elements.symbols.checked
+            ) {
+                sets.push(CHARACTERS.symbols);
+            }
+
+            // Remove ambiguous characters from every enabled character set.
+            if (elements.excludeAmbiguous.checked) {
+                return sets
+                    .map(removeAmbiguousCharacters)
+                    .filter(set => set.length > 0);
+            }
+
+            return sets;
+        }
+
+        /**
+         * Generates one password with the requested length.
+         *
+         * At least one character from every selected character class is
+         * included. Remaining positions are filled from the combined pool.
+         */
+        function generatePassword(length) {
+            const sets = getCharacterSets();
+
+            if (sets.length === 0) {
+                throw new Error("Select at least one character type.");
+            }
+
+            if (length < sets.length) {
+                throw new Error(
+                    `Password length must be at least ${sets.length} to include every selected character type.`
+                );
+            }
+
+            const allCharacters = sets.join("");
+            const password = [];
+
+            // Guarantee at least one character from each selected class.
+            for (const set of sets) {
+                password.push(randomCharacter(set));
+            }
+
+            // Fill all remaining positions from the complete character pool.
+            while (password.length < length) {
+                password.push(randomCharacter(allCharacters));
+            }
+
+            // Randomize character positions so the guaranteed characters do
+            // not always appear at the beginning of the password.
+            shuffleSecurely(password);
+
+            return password.join("");
+        }
+
+        /**
+         * Reads and normalizes the requested password length.
+         */
+        function getRequestedLength() {
+            const length = Number.parseInt(elements.length.value, 10);
+
+            if (!Number.isInteger(length)) {
+                return 20;
+            }
+
+            return Math.max(4, Math.min(128, length));
+        }
+
+        /**
+         * Reads and normalizes the requested number of passwords.
+         */
+        function getRequestedCount() {
+            const count = Number.parseInt(elements.count.value, 10);
+
+            if (!Number.isInteger(count)) {
+                return 1;
+            }
+
+            return Math.max(1, Math.min(100, count));
+        }
+
+        /**
+         * Displays an error message in the UI.
+         */
+        function showError(message) {
+            elements.error.textContent = message;
+            elements.error.style.display = "block";
+        }
+
+        /**
+         * Clears the current error message.
+         */
+        function hideError() {
+            elements.error.textContent = "";
+            elements.error.style.display = "none";
+        }
+
+        /**
+         * Creates the result row for one generated password, including
+         * its individual Copy button.
+         */
+        function createPasswordElement(password) {
+            const result = document.createElement("div");
+            result.className = "result";
+
+            const passwordValue = document.createElement("div");
+            passwordValue.className = "password";
+            passwordValue.textContent = password;
+
+            const copyButton = document.createElement("button");
+            copyButton.className = "copy-button";
+            copyButton.textContent = "Copy";
+
+            copyButton.addEventListener("click", async () => {
+                await copyText(password);
+
+                const originalText = copyButton.textContent;
+
+                copyButton.textContent = "Copied";
+
+                setTimeout(() => {
+                    copyButton.textContent = originalText;
+                }, 1000);
+            });
+
+            result.append(passwordValue, copyButton);
+
+            return result;
+        }
+
+        /**
+         * Generates the requested number of passwords and replaces
+         * the current contents of the result area.
+         */
+        function generate() {
+            hideError();
+
+            try {
+                const length = getRequestedLength();
+                const count = getRequestedCount();
+
+                // Write normalized values back to the controls.
+                elements.length.value = length;
+                elements.lengthRange.value = length;
+                elements.count.value = count;
+
+                // Remove results from the previous generation.
+                elements.results.replaceChildren();
+
+                for (let i = 0; i < count; i++) {
+                    const password = generatePassword(length);
+
+                    elements.results.append(
+                        createPasswordElement(password)
+                    );
+                }
+
+                // Adapt the action label depending on the number of results.
+                elements.copyAll.textContent =
+                    count === 1
+                        ? "Copy"
+                        : "Copy all";
+            } catch (error) {
+                showError(
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to generate password."
+                );
+            }
+        }
+
+        /**
+         * Copies text to the system clipboard.
+         *
+         * The modern Clipboard API is preferred. A temporary textarea and
+         * execCommand("copy") are used as a fallback where necessary.
+         */
+        async function copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch {
+                const textarea = document.createElement("textarea");
+
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.append(textarea);
+
+                textarea.select();
+                document.execCommand("copy");
+
+                textarea.remove();
+            }
+        }
+
+        /**
+         * Copies all currently generated passwords, separated by new lines.
+         */
+        async function copyAll() {
+            const passwords = [
+                ...document.querySelectorAll(".password")
+            ].map(element => element.textContent);
+
+            if (passwords.length === 0) {
+                return;
+            }
+
+            await copyText(passwords.join("\n"));
+
+            elements.copyAll.textContent = "Copied";
+
+            setTimeout(() => {
+                elements.copyAll.textContent =
+                    passwords.length === 1
+                        ? "Copy"
+                        : "Copy all";
+            }, 1000);
+        }
+
+        // Main actions.
+        elements.generate.addEventListener("click", generate);
+        elements.copyAll.addEventListener("click", copyAll);
+
+        // Keep the range slider and numeric length input synchronized.
+        elements.lengthRange.addEventListener("input", () => {
+            elements.length.value = elements.lengthRange.value;
+        });
+
+        elements.length.addEventListener("input", () => {
+            elements.lengthRange.value = getRequestedLength();
+        });
+
+        // Letters-only mode temporarily disables number and symbol options.
+        // Their checked states are preserved so they can be restored later.
+        elements.lettersOnly.addEventListener("change", () => {
+            const lettersOnly = elements.lettersOnly.checked;
+
+            elements.numbers.disabled = lettersOnly;
+            elements.symbols.disabled = lettersOnly;
+
+            generate();
+        });
+
+        // Regenerate immediately when a character selection changes.
+        [
+            elements.lowercase,
+            elements.uppercase,
+            elements.numbers,
+            elements.symbols,
+            elements.excludeAmbiguous
+        ].forEach(element => {
+            element.addEventListener("change", generate);
+        });
+
+        // Generate the initial password when the page loads.
+        generate();    
+    </script>
+
+</body>
+
+</html>
